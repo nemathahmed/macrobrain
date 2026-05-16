@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>macrobrain — SF's food brain</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0a;
+      --surface: #111;
+      --border: #1e1e1e;
+      --text: #f0ede8;
+      --muted: #6b6560;
+      --accent: #e8622a;
+      --accent-dim: rgba(232, 98, 42, 0.12);
+    }
+
+    html { font-size: 16px; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* NAV */
+    nav {
+      padding: 1.5rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo {
+      font-size: 0.95rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      text-decoration: none;
+    }
+
+    .logo span { color: var(--accent); }
+
+    nav a.cta-small {
+      font-size: 0.85rem;
+      color: var(--muted);
+      text-decoration: none;
+      border: 1px solid var(--border);
+      padding: 0.4rem 0.9rem;
+      border-radius: 6px;
+      transition: border-color 0.2s, color 0.2s;
+    }
+
+    nav a.cta-small:hover { border-color: var(--muted); color: var(--text); }
+
+    /* HERO */
+    .hero {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 6rem 2rem 4rem;
+      max-width: 680px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .eyebrow {
+      font-size: 0.75rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 1.5rem;
+      font-weight: 500;
+    }
+
+    h1 {
+      font-size: clamp(2.4rem, 6vw, 3.8rem);
+      font-weight: 700;
+      letter-spacing: -0.04em;
+      line-height: 1.05;
+      margin-bottom: 1.5rem;
+      color: var(--text);
+    }
+
+    h1 em {
+      font-style: normal;
+      color: var(--accent);
+    }
+
+    .sub {
+      font-size: 1.05rem;
+      color: var(--muted);
+      line-height: 1.6;
+      max-width: 480px;
+      margin-bottom: 3rem;
+    }
+
+    /* SMS CTA */
+    .sms-block {
+      display: inline-flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-bottom: 4rem;
+    }
+
+    .sms-label {
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .phone-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.75rem;
+      background: var(--accent-dim);
+      border: 1px solid rgba(232, 98, 42, 0.3);
+      border-radius: 10px;
+      padding: 0.85rem 1.25rem;
+      text-decoration: none;
+      transition: background 0.2s, border-color 0.2s;
+    }
+
+    .phone-cta:hover {
+      background: rgba(232, 98, 42, 0.2);
+      border-color: rgba(232, 98, 42, 0.5);
+    }
+
+    .phone-icon {
+      width: 18px;
+      height: 18px;
+      opacity: 0.7;
+    }
+
+    .phone-number {
+      font-size: 1.25rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: var(--text);
+    }
+
+    .phone-hint {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-top: 0.5rem;
+      padding-left: 0.25rem;
+    }
+
+    /* CONVERSATION DEMO */
+    .demo {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      margin-bottom: 4rem;
+      max-width: 420px;
+    }
+
+    .bubble {
+      padding: 0.7rem 1rem;
+      border-radius: 16px;
+      font-size: 0.9rem;
+      line-height: 1.45;
+      max-width: 85%;
+    }
+
+    .bubble.user {
+      background: #1c1c1e;
+      color: var(--text);
+      border-bottom-right-radius: 4px;
+      align-self: flex-end;
+      border: 1px solid var(--border);
+    }
+
+    .bubble.bot {
+      background: var(--accent-dim);
+      border: 1px solid rgba(232, 98, 42, 0.2);
+      color: var(--text);
+      border-bottom-left-radius: 4px;
+      align-self: flex-start;
+    }
+
+    .demo-label {
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 1rem;
+    }
+
+    /* HOW IT WORKS */
+    .how {
+      border-top: 1px solid var(--border);
+      padding-top: 2.5rem;
+      margin-bottom: 4rem;
+    }
+
+    .how-title {
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 1.5rem;
+    }
+
+    .steps {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .step {
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+    }
+
+    .step-num {
+      font-size: 0.75rem;
+      color: var(--accent);
+      font-weight: 600;
+      width: 1.5rem;
+      flex-shrink: 0;
+      padding-top: 0.05rem;
+    }
+
+    .step-text {
+      font-size: 0.92rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .step-text strong { color: var(--text); font-weight: 500; }
+
+    /* FOOTER */
+    footer {
+      padding: 1.5rem 2rem;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    footer p {
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    .dot {
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      background: #2d9c4a;
+      border-radius: 50%;
+      margin-right: 0.4rem;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    @media (max-width: 480px) {
+      nav { padding: 1.25rem; }
+      .hero { padding: 4rem 1.25rem 3rem; }
+      footer { flex-direction: column; gap: 0.5rem; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <a class="logo" href="/">macro<span>brain</span></a>
+    <a class="cta-small" href="sms:+16282679212">Text us</a>
+  </nav>
+
+  <main class="hero">
+
+    <p class="eyebrow">San Francisco</p>
+
+    <h1>Your city knows<br />what to <em>eat.</em></h1>
+
+    <p class="sub">
+      Text macrobrain what you're craving — or what you're hitting protein-wise today — and get a real answer. Real restaurants. Real macros. Live deals.
+    </p>
+
+    <div class="sms-block">
+      <span class="sms-label">iMessage or SMS</span>
+      <a class="phone-cta" href="sms:+16282679212&body=I'm trying to hit 180g protein today. What should I eat in SF?">
+        <svg class="phone-icon" viewBox="0 0 24 24" fill="none" stroke="#e8622a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        </svg>
+        <span class="phone-number">(628) 267-9212</span>
+      </a>
+      <p class="phone-hint">Tap to open Messages with a starter prompt</p>
+    </div>
+
+    <div class="demo">
+      <p class="demo-label">How it goes</p>
+      <div class="bubble user">trying to hit 180g protein today, want indian food</div>
+      <div class="bubble bot">Bhainsaab Marina — Lamb Seekh Kebab Platter, 54g protein / 720 cal. Tandoori-grilled, no fillers. Add the dal makhani for another 18g. 2000 Chestnut.</div>
+      <div class="bubble user">anything with a happy hour right now?</div>
+      <div class="bubble bot">Absinthe Hayes Valley — happy hour til 6pm, $2 off all apps. Their steak frites runs 48g protein. 398 Hayes St.</div>
+    </div>
+
+    <div class="how">
+      <p class="how-title">What's under the hood</p>
+      <div class="steps">
+        <div class="step">
+          <span class="step-num">01</span>
+          <p class="step-text"><strong>100 SF restaurants</strong> indexed with dish-level macros, hours, neighborhoods, and dietary tags.</p>
+        </div>
+        <div class="step">
+          <span class="step-num">02</span>
+          <p class="step-text"><strong>Live deal pipeline</strong> scrapes Instagram and restaurant sites daily. Restaurants text in their own specials.</p>
+        </div>
+        <div class="step">
+          <span class="step-num">03</span>
+          <p class="step-text"><strong>Remembers your goals.</strong> Tell it once — "trying to cut, staying under 2000 cal" — and every reply is calibrated to you.</p>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <footer>
+    <p><span class="dot"></span>Live on iMessage · SF only for now</p>
+    <p>macrobrain © 2026</p>
+  </footer>
+
+</body>
+</html>
