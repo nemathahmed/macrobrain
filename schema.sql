@@ -23,7 +23,14 @@ create table if not exists businesses (
   created_at timestamptz not null default now()
 );
 
+create table if not exists deals (
+  slug text primary key,
+  content text not null,
+  updated_at timestamptz not null default now()
+);
+
 -- Disable RLS so the anon key can read/write (fine for this project)
 alter table users disable row level security;
 alter table history disable row level security;
 alter table businesses disable row level security;
+alter table deals disable row level security;

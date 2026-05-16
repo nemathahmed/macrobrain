@@ -1,5 +1,6 @@
 import { readFileSync, readdirSync, existsSync } from "fs";
 import { join } from "path";
+import { supabase } from "./db.ts";
 
 const RESTAURANTS_DIR = join(import.meta.dir, "../../outputs/restaurants");
 const DISHES_DIR = join(import.meta.dir, "../../outputs/dishes");
@@ -15,8 +16,8 @@ interface Doc {
   dietaryTags: string[];
 }
 
-// In-memory deal updates written by the business handler
-const dealUpdates = new Map<string, string>();
+// In-memory cache for deals (backed by Supabase)
+const dealCache = new Map<string, string>();
 
 let _docs: Doc[] | null = null;
 
@@ -120,11 +121,11 @@ function formatDoc(doc: Doc): string {
   }
   if (doc.dietaryTags.length) lines.push(`dietary: ${doc.dietaryTags.join(", ")}`);
 
-  // Include deal updates if any
+  // Include deal updates from cache if any
   const dealKey = `concepts/${doc.slug.replace(/^concepts\//, "")}`;
-  if (dealUpdates.has(dealKey)) {
-    const deal = dealUpdates.get(dealKey)!;
-    const dealSection = deal.match(/## Business Update[\s\S]*?(?=\n## |$)/)?.[0] ?? "";
+  if (dealCache.has(dealKey)) {
+    const deal = dealCache.get(dealKey)!;
+    const dealSection = deal.match(/## (?:Business Update|Deals & Specials)[\s\S]*?(?=\n## |$)/)?.[0] ?? "";
     if (dealSection) lines.push(dealSection.trim());
   }
 
@@ -160,9 +161,17 @@ export async function gbrainQuery(question: string): Promise<string> {
 }
 
 export async function gbrainGet(slug: string): Promise<string> {
-  // Check in-memory deal updates first
-  if (dealUpdates.has(slug)) return dealUpdates.get(slug)!;
+  // Check memory cache first
+  if (dealCache.has(slug)) return dealCache.get(slug)!;
 
+  // Check Supabase deals table
+  const { data } = await supabase.from("deals").select("content").eq("slug", slug).single();
+  if (data?.content) {
+    dealCache.set(slug, data.content);
+    return data.content;
+  }
+
+  // Fall back to static markdown files
   const restaurantSlug = slug.replace(/^concepts\//, "");
   const restaurantPath = join(RESTAURANTS_DIR, `${restaurantSlug}.md`);
   if (existsSync(restaurantPath)) return readFileSync(restaurantPath, "utf-8");
@@ -174,7 +183,8 @@ export async function gbrainGet(slug: string): Promise<string> {
 }
 
 export async function gbrainPut(slug: string, content: string): Promise<string> {
-  dealUpdates.set(slug, content);
+  dealCache.set(slug, content);
+  await supabase.from("deals").upsert({ slug, content, updated_at: new Date().toISOString() }, { onConflict: "slug" });
   return "ok";
 }
 
