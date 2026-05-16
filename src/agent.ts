@@ -3,6 +3,18 @@ import { gbrainSearch, gbrainQuery, gbrainGet } from "./gbrain.ts";
 import type { UserProfile } from "./user.ts";
 import { appendHistory, updateGoals } from "./user.ts";
 
+function stripMarkdown(text: string): string {
+  return text
+    .replace(/\*\*(.+?)\*\*/g, "$1")   // **bold**
+    .replace(/\*(.+?)\*/g, "$1")        // *italic*
+    .replace(/^#{1,6}\s+/gm, "")        // # headings
+    .replace(/^[-*+]\s+/gm, "• ")       // bullet points → •
+    .replace(/`([^`]+)`/g, "$1")        // `code`
+    .replace(/\[(.+?)\]\(.+?\)/g, "$1") // [links](url)
+    .replace(/\n{3,}/g, "\n\n")         // excessive newlines
+    .trim();
+}
+
 const client = new OpenAI({
   baseURL: "https://openrouter.ai/api/v1",
   apiKey: process.env.OPENROUTER_API_KEY!,
@@ -165,7 +177,8 @@ export async function answerFoodQuery(
     });
   }
 
-  const reply = response.choices[0]?.message.content ?? "No answer — try again.";
+  const raw = response.choices[0]?.message.content ?? "No answer — try again.";
+  const reply = stripMarkdown(raw);
 
   appendHistory(phone, text, reply).catch(() => {});
 
