@@ -1,6 +1,7 @@
 import { readFileSync, readdirSync, existsSync } from "fs";
 import { join } from "path";
 import { supabase } from "./db.ts";
+import ZeroEntropy from "zeroentropy";
 
 const RESTAURANTS_DIR = join(import.meta.dir, "../../outputs/restaurants");
 const DISHES_DIR = join(import.meta.dir, "../../outputs/dishes");
@@ -18,6 +19,16 @@ interface Doc {
 
 // In-memory cache for deals (backed by Supabase)
 const dealCache = new Map<string, string>();
+
+// Zero Entropy client — lazy, only if key is present
+const ZE_COLLECTION = "sf-restaurants";
+let _zeClient: ZeroEntropy | null = null;
+function getZeClient(): ZeroEntropy | null {
+  if (_zeClient) return _zeClient;
+  if (!process.env.ZEROENTROPY_API_KEY) return null;
+  _zeClient = new ZeroEntropy({ apiKey: process.env.ZEROENTROPY_API_KEY });
+  return _zeClient;
+}
 
 let _docs: Doc[] | null = null;
 
@@ -138,7 +149,38 @@ function formatDoc(doc: Doc): string {
   return lines.join("\n");
 }
 
-export async function gbrainSearch(query: string): Promise<string> {
+async function zeSearch(query: string): Promise<string | null> {
+  const ze = getZeClient();
+  if (!ze) return null;
+
+  try {
+    const res = await ze.queries.topSnippets({
+      collection_name: ZE_COLLECTION,
+      query,
+      k: 8,
+      precise_responses: true,
+    });
+
+    const snippets = res.results ?? [];
+    if (snippets.length === 0) return null;
+
+    // Attach any cached deal updates to ZE results
+    return snippets.map((s) => {
+      const slug = s.path.replace(/^restaurants\//, "concepts/");
+      let text = s.content ?? "";
+      if (dealCache.has(slug)) {
+        const deal = dealCache.get(slug)!;
+        const dealSection = deal.match(/## (?:Business Update|Deals & Specials)[\s\S]*?(?=\n## |$)/)?.[0] ?? "";
+        if (dealSection) text += "\n" + dealSection.trim();
+      }
+      return text;
+    }).join("\n\n---\n\n");
+  } catch {
+    return null;
+  }
+}
+
+function keywordSearch(query: string): string {
   const docs = loadDocs();
   const terms = query.toLowerCase().split(/\s+/).filter((t) => t.length > 2);
   const wantsHighProtein = /protein|macro|lean|high.prot/i.test(query);
@@ -156,9 +198,16 @@ export async function gbrainSearch(query: string): Promise<string> {
   return scored.map((r) => formatDoc(r.doc)).join("\n\n---\n\n");
 }
 
+export async function gbrainSearch(query: string): Promise<string> {
+  const zeResult = await zeSearch(query);
+  if (zeResult) return zeResult;
+  return keywordSearch(query);
+}
+
 export async function gbrainQuery(question: string): Promise<string> {
   return gbrainSearch(question);
 }
+
 
 export async function gbrainGet(slug: string): Promise<string> {
   // Check memory cache first

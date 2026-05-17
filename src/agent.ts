@@ -1,17 +1,17 @@
 import OpenAI from "openai";
 import { gbrainSearch, gbrainQuery, gbrainGet } from "./gbrain.ts";
 import type { UserProfile } from "./user.ts";
-import { appendHistory, updateGoals } from "./user.ts";
+import { appendHistory, updateGoals, updateMemory } from "./user.ts";
 
 function stripMarkdown(text: string): string {
   return text
-    .replace(/\*\*(.+?)\*\*/g, "$1")   // **bold**
-    .replace(/\*(.+?)\*/g, "$1")        // *italic*
-    .replace(/^#{1,6}\s+/gm, "")        // # headings
-    .replace(/^[-*+]\s+/gm, "• ")       // bullet points → •
-    .replace(/`([^`]+)`/g, "$1")        // `code`
-    .replace(/\[(.+?)\]\(.+?\)/g, "$1") // [links](url)
-    .replace(/\n{3,}/g, "\n\n")         // excessive newlines
+    .replace(/\*\*(.+?)\*\*/g, "$1")
+    .replace(/\*(.+?)\*/g, "$1")
+    .replace(/^#{1,6}\s+/gm, "")
+    .replace(/^[-*+]\s+/gm, "• ")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/\[(.+?)\]\(.+?\)/g, "$1")
+    .replace(/\n{3,}/g, "\n\n")
     .trim();
 }
 
@@ -20,7 +20,7 @@ const client = new OpenAI({
   apiKey: process.env.OPENROUTER_API_KEY!,
 });
 
-const MODEL = process.env.MODEL ?? "anthropic/claude-opus-4-7";
+const MODEL = process.env.MODEL ?? "anthropic/claude-sonnet-4-6";
 
 const TOOLS: OpenAI.ChatCompletionTool[] = [
   {
@@ -97,28 +97,49 @@ function makeCallTool(phone: string) {
   };
 }
 
+async function updateMemoryBackground(
+  phone: string,
+  userText: string,
+  reply: string,
+  currentMemory: string
+): Promise<void> {
+  try {
+    const res = await client.chat.completions.create({
+      model: "anthropic/claude-haiku-4-5-20251014",
+      max_tokens: 400,
+      messages: [
+        {
+          role: "user",
+          content: `Update these running notes about a food app user based on their latest exchange. Keep under 400 words, plain text.\n\nCurrent notes:\n${currentMemory || "(none)"}\n\nUser: "${userText}"\nBot: "${reply}"\n\nWrite the full updated notes:`,
+        },
+      ],
+    });
+    const newMemory = res.choices[0]?.message.content?.trim();
+    if (newMemory) await updateMemory(phone, newMemory);
+  } catch {
+    // non-critical, ignore
+  }
+}
+
 const SYSTEM = `You are macrobrain, an SMS food assistant for San Francisco. You have a database of SF restaurants, dishes, macros, and deals.
 
-Answer format — always lead with the specifics, in this order:
-1. Restaurant name + neighborhood (e.g. "Souvla Hayes Valley")
-2. Dish to order
-3. Macros if relevant (protein, calories)
-4. One-line reason it fits their goal
-5. Any active deal if you have one
+Reply in a single tight SMS message. Format:
+[Restaurant] [Neighborhood] — [Dish], [protein]g protein / [cal] cal. [One-line reason]. [Price]. [Street address, SF, CA]
+
+Confirmation rule (HIGHEST PRIORITY):
+If the user confirms or selects a restaurant already mentioned — "sounds good", "that one", "let's go", "yeah", "ok", repeating the name — reply with ONLY the street address so they can tap to navigate. Nothing else.
 
 Rules:
 - Never mention internal tools, search systems, or your data sources
-- Never say "I don't have data on X" or "my database doesn't cover X" — just find the closest match and recommend it confidently
-- Keep it under 160 characters if possible — this is SMS
-- No filler, no meta-commentary, no asking clarifying questions unless truly necessary
-- Multiple options? Give 2-3 as a tight list, not paragraphs
-- If someone tells you their goals (e.g. "trying to hit 180g protein"), call update_user_goals to save it
+- Never say "I don't have data on X" — find the closest match and recommend it confidently
+- Always end with the street address (e.g. "517 Hayes St, SF, CA") so the user can tap to navigate
+- Under 320 characters total
+- No filler, no meta-commentary, no clarifying questions unless truly necessary
+- Multiple options? Give 2-3 as a tight list
+- If someone tells you their goals (e.g. "trying to hit 180g protein"), call update_user_goals
 
-Example good response:
-"Souvla Hayes Valley — Half Rotisserie Chicken, 70g protein / 720 cal. Lean, spit-fired, gluten-free. $19."
-
-Example bad response:
-"Based on my search, I found a few options that might work for you..."`;
+Example:
+"Souvla Hayes Valley — Half Rotisserie Chicken, 70g protein / 720 cal. Spit-fired, gluten-free. $19. 517 Hayes St, SF, CA"`;
 
 
 export async function answerFoodQuery(
@@ -127,11 +148,12 @@ export async function answerFoodQuery(
   phone: string
 ): Promise<string> {
   const userContext = [
+    user.memory ? `Notes about this user:\n${user.memory}` : null,
     user.goals && user.goals !== "(not set)" ? `Goals: ${user.goals}` : null,
-    user.history.length > 0 ? `Recent: ${user.history.slice(-3).join("; ")}` : null,
+    user.history.length > 0 ? `Recent conversation:\n${user.history.join("\n")}` : null,
   ]
     .filter(Boolean)
-    .join("\n");
+    .join("\n\n");
 
   const messages: OpenAI.ChatCompletionMessageParam[] = [
     { role: "system", content: SYSTEM },
@@ -145,7 +167,7 @@ export async function answerFoodQuery(
 
   let response = await client.chat.completions.create({
     model: MODEL,
-    max_tokens: 1024,
+    max_tokens: 512,
     tools: TOOLS,
     messages,
   });
@@ -171,7 +193,7 @@ export async function answerFoodQuery(
 
     response = await client.chat.completions.create({
       model: MODEL,
-      max_tokens: 1024,
+      max_tokens: 512,
       tools: TOOLS,
       messages,
     });
@@ -181,6 +203,7 @@ export async function answerFoodQuery(
   const reply = stripMarkdown(raw);
 
   appendHistory(phone, text, reply).catch(() => {});
+  updateMemoryBackground(phone, text, reply, user.memory).catch(() => {});
 
   return reply;
 }

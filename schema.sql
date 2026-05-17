@@ -3,6 +3,7 @@
 create table if not exists users (
   phone text primary key,
   goals text not null default '',
+  memory text not null default '',
   created_at timestamptz not null default now()
 );
 

@@ -3,6 +3,7 @@ import { supabase } from "./db.ts";
 export interface UserProfile {
   phone: string;
   goals: string;
+  memory: string;
   history: string[];
 }
 
@@ -11,7 +12,7 @@ export async function getOrCreateUser(phone: string): Promise<UserProfile> {
 
   const { data: user } = await supabase
     .from("users")
-    .select("goals")
+    .select("goals, memory")
     .eq("phone", phone)
     .single();
 
@@ -20,7 +21,7 @@ export async function getOrCreateUser(phone: string): Promise<UserProfile> {
     .select("message, reply")
     .eq("phone", phone)
     .order("created_at", { ascending: false })
-    .limit(10);
+    .limit(6);
 
   const history = (rows ?? [])
     .reverse()
@@ -29,12 +30,17 @@ export async function getOrCreateUser(phone: string): Promise<UserProfile> {
   return {
     phone,
     goals: user?.goals ?? "",
+    memory: user?.memory ?? "",
     history,
   };
 }
 
 export async function updateGoals(phone: string, goals: string): Promise<void> {
   await supabase.from("users").update({ goals }).eq("phone", phone);
+}
+
+export async function updateMemory(phone: string, memory: string): Promise<void> {
+  await supabase.from("users").update({ memory }).eq("phone", phone);
 }
 
 export async function appendHistory(phone: string, message: string, reply: string): Promise<void> {

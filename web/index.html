@@ -1,340 +1,1000 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>macrobrain — SF's food brain</title>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>forksf — SF's food brain</title>
+<meta name="description" content="Text forksf — get a real SF restaurant, the right dish, and any live deal.">
+<link rel="icon" type="image/svg+xml" href="./favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --orange: #ff5a1f;
+    --orange-hot: #ff7a3d;
+    --orange-deep: #d8430e;
+    --orange-soft: #ffd9c2;
+    --cream: #fff5ec;
+    --cream-2: #ffe9d3;
+    --ink: #1a1208;
+    --noir: #0e0c08;
+    --mute: #8a7e6b;
+    --line: rgba(26,18,8,0.08);
+    --line-2: rgba(26,18,8,0.14);
+    --live: #2bd46a;
+    --bubble-in: #f1e9d8;
+    --r-bub: 22px;
+    --r-card: 26px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    font-family: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+    color: var(--ink);
+    background: var(--cream);
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    overflow-x: hidden;
+    min-height: 100vh;
+  }
+  ::selection{ background: var(--orange); color: #fff }
+  a{color:inherit; text-decoration: none}
+  .mono{ font-family: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace; font-feature-settings: "tnum" 1; }
+  .display{
+    font-family: "Bricolage Grotesque", "Geist", system-ui, sans-serif;
+    font-weight: 700; letter-spacing: -0.025em; line-height: 0.96;
+    text-wrap: balance;
+  }
+  .wrap{ width: 100%; max-width: 1180px; margin: 0 auto; padding: 0 20px; }
 
-    :root {
-      --bg: #0a0a0a;
-      --surface: #111;
-      --border: #1e1e1e;
-      --text: #f0ede8;
-      --muted: #6b6560;
-      --accent: #e8622a;
-      --accent-dim: rgba(232, 98, 42, 0.12);
-    }
+  /* ── animated background ──────────────────────────── */
+  .bg{
+    position: fixed; inset: 0; z-index: -2; pointer-events: none;
+    background:
+      radial-gradient(120% 80% at 50% 0%, #ffe1c4 0%, var(--cream) 55%, var(--cream) 100%);
+  }
+  .bg-grid{
+    position: fixed; inset: 0; z-index: -1; pointer-events: none;
+    background-image:
+      linear-gradient(rgba(26,18,8,0.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(26,18,8,0.045) 1px, transparent 1px);
+    background-size: 64px 64px;
+    mask-image: radial-gradient(75% 60% at 50% 35%, #000 30%, transparent 95%);
+    -webkit-mask-image: radial-gradient(75% 60% at 50% 35%, #000 30%, transparent 95%);
+    transition: opacity .6s ease;
+  }
+  .blob{
+    position: fixed; z-index: -1; pointer-events: none;
+    border-radius: 50%;
+    filter: blur(70px);
+    opacity: 0.7;
+    transition: background .8s ease, transform 1.2s cubic-bezier(.2,.8,.2,1);
+    will-change: transform;
+  }
+  .blob.b1{
+    width: 540px; height: 540px;
+    top: -160px; right: -120px;
+    background: radial-gradient(circle, var(--orange) 0%, rgba(255,90,31,0) 65%);
+    animation: float1 18s ease-in-out infinite;
+  }
+  .blob.b2{
+    width: 420px; height: 420px;
+    bottom: -160px; left: -140px;
+    background: radial-gradient(circle, #ffb88f 0%, rgba(255,184,143,0) 65%);
+    animation: float2 22s ease-in-out infinite;
+    opacity: 0.55;
+  }
+  @keyframes float1{
+    0%,100%{ transform: translate(0,0) scale(1) }
+    50%{ transform: translate(-40px, 60px) scale(1.08) }
+  }
+  @keyframes float2{
+    0%,100%{ transform: translate(0,0) scale(1) }
+    50%{ transform: translate(60px, -40px) scale(1.06) }
+  }
+  body.biz .bg{
+    background: radial-gradient(120% 80% at 50% 0%, #1a1308 0%, var(--noir) 60%, #08070a 100%);
+  }
+  body.biz .bg-grid{
+    background-image:
+      linear-gradient(rgba(255,255,255,0.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.045) 1px, transparent 1px);
+  }
+  body.biz .blob.b1{ background: radial-gradient(circle, var(--orange) 0%, rgba(255,90,31,0) 60%); opacity: 0.45 }
+  body.biz .blob.b2{ background: radial-gradient(circle, #ff7a3d 0%, rgba(255,122,61,0) 60%); opacity: 0.32 }
 
-    html { font-size: 16px; }
+  /* ── theme tokens that flip ───────────────────────── */
+  body{ transition: color .55s ease }
+  body.biz{ color: #f3ead9 }
+  body.biz .topbar{
+    background: rgba(14,12,8,0.55);
+    border-bottom-color: rgba(255,255,255,0.06);
+    color: #f3ead9;
+  }
+  body.biz .live, body.biz .topbar a{ color: #f3ead9 }
 
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
+  /* ── Top bar ─────────────────────────────────────────── */
+  .topbar{
+    position: sticky; top:0; z-index: 30;
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    background: rgba(255,245,236,0.7);
+    border-bottom: 1px solid var(--line);
+    transition: background .55s ease, border-color .55s ease, color .55s ease;
+  }
+  .topbar .row{
+    display: flex; align-items: center; justify-content: space-between;
+    height: 56px;
+  }
+  .logo{
+    display:flex; align-items:center; gap: 9px;
+    font-family: "Bricolage Grotesque", sans-serif;
+    font-weight: 700; font-size: 18px; letter-spacing: -0.02em;
+  }
+  .logo .fork-icon{
+    width: 26px; height: 26px; border-radius: 8px;
+    background: radial-gradient(120% 120% at 25% 20%, #ffae7c 0%, var(--orange) 55%, var(--orange-deep) 100%);
+    box-shadow: 0 6px 14px -4px rgba(255,90,31,0.55), inset 0 -2px 4px rgba(0,0,0,0.12);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .live{
+    display:inline-flex; align-items:center; gap:8px;
+    font-family: "Geist Mono", monospace; font-size: 11px; letter-spacing: 0.04em;
+    text-transform: uppercase; color: #4a3a25;
+    transition: color .55s ease;
+  }
+  .pulse{
+    width:8px; height:8px; border-radius:50%; background: var(--live);
+    box-shadow: 0 0 0 0 rgba(43,212,106,0.6);
+    animation: pulse 1.8s ease-out infinite;
+    display:inline-block;
+  }
+  @keyframes pulse{
+    0%{ box-shadow: 0 0 0 0 rgba(43,212,106,0.55) }
+    70%{ box-shadow: 0 0 0 10px rgba(43,212,106,0) }
+    100%{ box-shadow: 0 0 0 0 rgba(43,212,106,0) }
+  }
 
-    /* NAV */
-    nav {
-      padding: 1.5rem 2rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 1px solid var(--border);
-    }
+  /* ── Hero (one section) ──────────────────────────── */
+  .hero{
+    position: relative;
+    padding: 18px 0 18px;
+    min-height: calc(100svh - 56px);
+    display: flex; align-items: center;
+  }
+  .hero-inner{ width: 100% }
 
-    .logo {
-      font-size: 0.95rem;
-      font-weight: 600;
-      letter-spacing: -0.02em;
-      color: var(--text);
-      text-decoration: none;
-    }
+  /* segmented toggle */
+  .toggle{
+    position: relative;
+    display: inline-flex; align-items: center;
+    padding: 5px;
+    background: rgba(255,255,255,0.7);
+    border: 1px solid var(--line-2);
+    border-radius: 999px;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    box-shadow: 0 10px 30px -16px rgba(40,20,0,0.25);
+    transition: background .55s ease, border-color .55s ease;
+    user-select: none;
+  }
+  body.biz .toggle{
+    background: rgba(255,255,255,0.06);
+    border-color: rgba(255,255,255,0.12);
+  }
+  .toggle button{
+    position: relative; z-index: 2;
+    appearance: none; border: 0; background: transparent;
+    font-family: "Geist", sans-serif;
+    font-size: 13px; font-weight: 500;
+    letter-spacing: -0.005em;
+    color: #6b5a40;
+    padding: 10px 18px;
+    border-radius: 999px;
+    cursor: pointer;
+    display: inline-flex; align-items: center; gap: 8px;
+    transition: color .35s ease;
+    white-space: nowrap;
+  }
+  .toggle button .ico{
+    width: 16px; height: 16px; display: inline-flex;
+  }
+  .toggle button[aria-pressed="true"]{ color: #fff }
+  body.biz .toggle button{ color: #b8a98e }
+  body.biz .toggle button[aria-pressed="true"]{ color: #fff }
+  .toggle .knob{
+    position: absolute; z-index: 1;
+    top: 5px; bottom: 5px;
+    border-radius: 999px;
+    background: var(--orange);
+    box-shadow: 0 8px 20px -8px rgba(216,67,14,0.55), inset 0 -2px 0 rgba(0,0,0,0.16), inset 0 1px 0 rgba(255,255,255,0.12);
+    transition: transform .45s cubic-bezier(.55,.05,.2,1.2), width .45s cubic-bezier(.55,.05,.2,1.2);
+    pointer-events: none;
+  }
 
-    .logo span { color: var(--accent); }
+  .hero-grid{
+    display: grid; grid-template-columns: 1fr; gap: 28px;
+    align-items: center;
+    margin-top: 18px;
+  }
+  .eyebrow{
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 7px 12px;
+    border: 1px solid rgba(216,67,14,0.25);
+    background: rgba(255,255,255,0.6);
+    border-radius: 8px;
+    font-family: "Geist Mono", monospace;
+    font-size: 11px; letter-spacing: 0.01em;
+    color: var(--orange-deep);
+    backdrop-filter: blur(6px);
+    white-space: nowrap;
+    transition: background .55s ease, border-color .55s ease, color .55s ease;
+  }
+  .eyebrow .op{ color: #b3743f; opacity: 0.7 }
+  .eyebrow .arr{ color: var(--orange); }
+  body.biz .eyebrow .op{ color: #c98e63 }
+  body.biz .eyebrow{
+    background: rgba(255,90,31,0.1);
+    border-color: rgba(255,138,82,0.4);
+    color: #ffb88f;
+  }
+  .eyebrow .dotg{ width:6px; height:6px; border-radius:999px; background: var(--orange); box-shadow: 0 0 0 3px rgba(255,90,31,0.18) }
 
-    nav a.cta-small {
-      font-size: 0.85rem;
-      color: var(--muted);
-      text-decoration: none;
-      border: 1px solid var(--border);
-      padding: 0.4rem 0.9rem;
-      border-radius: 6px;
-      transition: border-color 0.2s, color 0.2s;
-    }
+  h1.hero-h{
+    margin: 14px 0 12px;
+    font-size: clamp(40px, 8vw, 68px);
+    min-height: 1.1em;
+  }
+  h1.hero-h .accent{
+    background: linear-gradient(180deg, #ff7a3d 0%, var(--orange-deep) 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  body.biz h1.hero-h .accent{
+    background: linear-gradient(180deg, #ffb88f 0%, var(--orange) 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .hero p.sub{
+    font-family: "Geist Mono", monospace;
+    font-size: 11.5px;
+    line-height: 1.55;
+    letter-spacing: 0.01em;
+    max-width: 46ch;
+    color: #6b5a40;
+    margin: 0 0 18px;
+    text-wrap: pretty;
+    transition: color .55s ease;
+  }
+  body.biz .hero p.sub{ color: #a08e72 }
 
-    nav a.cta-small:hover { border-color: var(--muted); color: var(--text); }
+  /* CTA */
+  .cta{
+    display: inline-flex; align-items: stretch; gap: 0;
+    background: var(--orange);
+    color: #fff;
+    border-radius: 22px;
+    box-shadow:
+      0 20px 40px -16px rgba(216,67,14,0.55),
+      0 2px 0 0 rgba(0,0,0,0.04) inset,
+      0 -2px 0 0 rgba(0,0,0,0.18) inset;
+    transition: transform .25s cubic-bezier(.2,.8,.2,1), box-shadow .25s;
+    position: relative;
+    overflow: hidden;
+  }
+  .cta:hover{ transform: translateY(-2px) }
+  .cta:active{ transform: translateY(0); }
+  .cta::after{
+    content:""; position:absolute; top:0; bottom:0; left:-30%; width: 30%;
+    background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.35) 50%, transparent 70%);
+    animation: shine 4.2s ease-in-out infinite;
+    pointer-events: none;
+  }
+  @keyframes shine{
+    0%{ transform: translateX(0) } 55%{ transform: translateX(420%) } 100%{ transform: translateX(420%) }
+  }
+  .cta .pill{ display:flex; flex-direction: column; padding: 14px 18px; }
+  .cta .pill .small{
+    font-family: "Geist Mono", monospace; font-size: 11px; letter-spacing: 0.1em;
+    text-transform: uppercase; opacity: 0.9;
+  }
+  .cta .pill .num{
+    font-family: "Geist Mono", monospace; font-size: clamp(22px, 6.4vw, 28px);
+    font-weight: 600; margin-top: 1px;
+    white-space: nowrap;
+  }
+  .cta .icon{
+    display:flex; align-items:center; justify-content:center;
+    padding: 0 18px;
+    border-left: 1px solid rgba(255,255,255,0.22);
+    background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(0,0,0,0.08));
+  }
+  .cta .icon svg{ width: 22px; height: 22px; display:block; transition: transform .25s }
+  .cta:hover .icon svg{ transform: translateX(2px) }
+  .cta-row{ display:flex; align-items:center; gap: 14px; flex-wrap: wrap; }
+  .cta-hint{
+    font-family: "Geist Mono", monospace; font-size: 11px; letter-spacing: 0.06em;
+    color: #6b5a40; text-transform: uppercase;
+    display:inline-flex; align-items: center; gap: 8px;
+    transition: color .55s ease;
+  }
+  body.biz .cta-hint{ color: #a08e72 }
+  .biz-note{
+    display: none;
+    font-family: "Geist Mono", monospace; font-size: 10.5px; letter-spacing: 0.03em;
+    color: #8a7e6b; margin: 10px 0 0; line-height: 1.5;
+  }
+  body.biz .biz-note{ display: block; }
+  body.biz .biz-note{ color: #7a6c56; }
 
-    /* HERO */
-    .hero {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      padding: 6rem 2rem 4rem;
-      max-width: 680px;
-      margin: 0 auto;
-      width: 100%;
-    }
+  /* ── iPhone frame (chat lives inside) ─────────────── */
+  .chat-stack{
+    position: relative;
+    width: 100%;
+    max-width: 320px;
+    margin: 0 auto;
+    perspective: 1400px;
+  }
+  .chat{
+    width: 100%;
+    aspect-ratio: 9 / 18.5;
+    background:
+      linear-gradient(160deg, #2a2722 0%, #0c0a08 40%, #1a1612 100%);
+    border-radius: 54px;
+    padding: 10px;
+    position: relative;
+    box-shadow:
+      0 60px 100px -34px rgba(40,20,0,0.55),
+      0 18px 40px -18px rgba(40,20,0,0.35),
+      0 0 0 1.5px rgba(255,255,255,0.04) inset,
+      0 2px 0 rgba(255,255,255,0.06) inset,
+      0 -2px 0 rgba(0,0,0,0.4) inset;
+    transition: opacity .35s ease, transform .55s cubic-bezier(.2,.8,.2,1);
+    animation: phoneFloat 7s ease-in-out infinite;
+    will-change: transform;
+  }
+  @keyframes phoneFloat{
+    0%,100%{ transform: translateY(0) rotate(0deg) }
+    50%{ transform: translateY(-6px) rotate(0.2deg) }
+  }
+  .chat::before, .chat::after{
+    content:""; position: absolute; background: #15110c;
+    border-radius: 2px;
+  }
+  .chat::before{
+    right: -2px; top: 22%; width: 3px; height: 64px;
+    box-shadow: -1px 0 0 rgba(255,255,255,0.04);
+  }
+  .chat::after{
+    left: -2px; top: 16%; width: 3px; height: 30px;
+    box-shadow:
+      1px 0 0 rgba(255,255,255,0.04),
+      0 50px 0 #15110c, 0 50px 0 1px rgba(255,255,255,0.04),
+      0 96px 0 #15110c;
+    height: 30px;
+  }
 
-    .eyebrow {
-      font-size: 0.75rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--accent);
-      margin-bottom: 1.5rem;
-      font-weight: 500;
-    }
+  .screen{
+    position: relative;
+    width: 100%; height: 100%;
+    border-radius: 44px;
+    background: #fff;
+    overflow: hidden;
+    display: flex; flex-direction: column;
+    transition: background .55s ease;
+  }
+  body.biz .screen{ background: #0c0a08 }
 
-    h1 {
-      font-size: clamp(2.4rem, 6vw, 3.8rem);
-      font-weight: 700;
-      letter-spacing: -0.04em;
-      line-height: 1.05;
-      margin-bottom: 1.5rem;
-      color: var(--text);
-    }
+  .island{
+    position: absolute;
+    top: 9px; left: 50%; transform: translateX(-50%);
+    width: 96px; height: 30px;
+    background: #050402;
+    border-radius: 20px;
+    z-index: 5;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.04) inset;
+  }
+  .island::after{
+    content:""; position:absolute;
+    right: 9px; top: 50%; transform: translateY(-50%);
+    width: 6px; height: 6px; border-radius: 50%;
+    background: radial-gradient(circle, #1a3344 30%, #0a1620 70%);
+    box-shadow: inset 0 0 0 0.5px rgba(80,140,200,0.4);
+  }
 
-    h1 em {
-      font-style: normal;
-      color: var(--accent);
-    }
+  .status{
+    height: 44px;
+    padding: 14px 26px 0;
+    display: flex; align-items: center; justify-content: space-between;
+    font-family: "Geist", system-ui, sans-serif;
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--ink);
+    flex-shrink: 0;
+    transition: color .55s ease;
+  }
+  body.biz .status{ color: #f3ead9 }
+  .status .t{ font-feature-settings: "tnum" 1; letter-spacing: -0.01em; padding-left: 6px }
+  .status .ico-row{ display:flex; align-items:center; gap: 5px; padding-right: 4px }
+  .status svg{ display:block }
 
-    .sub {
-      font-size: 1.05rem;
-      color: var(--muted);
-      line-height: 1.6;
-      max-width: 480px;
-      margin-bottom: 3rem;
-    }
+  .msg-nav{
+    padding: 6px 14px 12px;
+    display: flex; flex-direction: column; align-items: center;
+    gap: 5px;
+    border-bottom: 1px solid rgba(26,18,8,0.06);
+    background: linear-gradient(180deg, rgba(255,250,243,0.9), rgba(255,255,255,0));
+    flex-shrink: 0;
+    position: relative;
+    transition: background .55s ease, border-color .55s ease;
+  }
+  body.biz .msg-nav{
+    background: linear-gradient(180deg, rgba(20,16,11,0.9), rgba(20,16,11,0));
+    border-bottom-color: rgba(255,255,255,0.06);
+  }
+  .msg-nav .back{
+    position: absolute; left: 14px; top: 14px;
+    color: var(--orange);
+    display: inline-flex; align-items: center; gap: 2px;
+    font-size: 13px;
+  }
+  .msg-nav .back .badge{
+    margin-left: 4px; min-width: 18px; height: 18px; padding: 0 5px;
+    background: var(--orange); color: #fff; border-radius: 999px;
+    font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center;
+  }
+  .msg-nav .avatar{
+    width: 44px; height: 44px; border-radius: 50%;
+    background: radial-gradient(120% 120% at 25% 20%, #ffae7c 0%, var(--orange) 55%, var(--orange-deep) 100%);
+    box-shadow: inset 0 -3px 6px rgba(0,0,0,0.16), 0 0 0 1.5px rgba(216,67,14,0.2);
+    position: relative;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff;
+    font-family: "Bricolage Grotesque", sans-serif;
+    font-weight: 700; font-size: 17px;
+  }
+  .msg-nav .avatar::after{
+    content:""; position:absolute; inset:auto -2px -2px auto;
+    width:11px; height:11px; border-radius:50%; background: var(--live);
+    box-shadow: 0 0 0 2px #fff;
+    transition: box-shadow .55s ease;
+  }
+  body.biz .msg-nav .avatar::after{ box-shadow: 0 0 0 2px #0c0a08 }
+  .msg-nav .name{
+    font-size: 11px; font-weight: 500; color: var(--ink);
+    display: flex; align-items: center; gap: 4px;
+    transition: color .55s ease;
+  }
+  body.biz .msg-nav .name{ color: #f3ead9 }
+  .msg-nav .name .chev{ opacity: 0.45 }
+  .msg-nav .sub{
+    font-family: "Geist Mono", monospace; font-size: 10px;
+    color: var(--mute); letter-spacing: 0.02em;
+    transition: color .55s ease;
+  }
+  body.biz .msg-nav .sub{ color: #9a8c73 }
+  .msg-nav .right{
+    position: absolute; right: 14px; top: 14px;
+    color: var(--orange); width: 22px; height: 22px;
+  }
 
-    /* SMS CTA */
-    .sms-block {
-      display: inline-flex;
-      flex-direction: column;
-      gap: 0.5rem;
-      margin-bottom: 4rem;
-    }
+  .chat .body{
+    flex: 1;
+    padding: 10px 12px 10px;
+    background:
+      radial-gradient(120% 80% at 50% 0%, rgba(255,90,31,0.05), transparent 60%),
+      transparent;
+    display: flex; flex-direction: column; gap: 4px;
+    overflow: hidden;
+    transition: background .55s ease;
+  }
+  body.biz .chat .body{
+    background:
+      radial-gradient(120% 80% at 50% 0%, rgba(255,90,31,0.08), transparent 60%),
+      transparent;
+  }
 
-    .sms-label {
-      font-size: 0.72rem;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--muted);
-    }
+  .chat .compose{
+    padding: 8px 12px 10px;
+    display: flex; align-items: center; gap: 8px;
+    background: transparent;
+    flex-shrink: 0;
+  }
+  .chat .compose .plus{
+    width: 30px; height: 30px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: #ece3d2;
+    color: #5b4e3a;
+    flex-shrink: 0;
+    transition: background .55s ease, color .55s ease;
+  }
+  body.biz .chat .compose .plus{ background: #221d14; color: #b8a98e }
+  .chat .compose .input{
+    flex:1; height: 32px; border-radius: 999px;
+    border: 1px solid rgba(26,18,8,0.12); background: #fff;
+    display:flex; align-items:center; justify-content: space-between;
+    padding: 0 6px 0 14px;
+    font-size: 12px; color: var(--mute);
+    transition: background .55s ease, border-color .55s ease, color .55s ease;
+  }
+  body.biz .chat .compose .input{
+    background: #15110c; border-color: rgba(255,255,255,0.1); color: #9a8c73;
+  }
+  .chat .compose .input .mic{
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--orange);
+    display: inline-flex; align-items: center; justify-content: center;
+    color: #fff;
+  }
+  .chat .compose .input .mic svg{ width: 12px; height: 12px }
 
-    .phone-cta {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.75rem;
-      background: var(--accent-dim);
-      border: 1px solid rgba(232, 98, 42, 0.3);
-      border-radius: 10px;
-      padding: 0.85rem 1.25rem;
-      text-decoration: none;
-      transition: background 0.2s, border-color 0.2s;
-    }
+  .home{
+    height: 22px;
+    display: flex; align-items: flex-end; justify-content: center;
+    padding-bottom: 7px;
+    flex-shrink: 0;
+  }
+  .home span{
+    width: 110px; height: 4px; border-radius: 999px;
+    background: var(--ink); opacity: 0.85;
+    transition: background .55s ease;
+  }
+  body.biz .home span{ background: #f3ead9 }
 
-    .phone-cta:hover {
-      background: rgba(232, 98, 42, 0.2);
-      border-color: rgba(232, 98, 42, 0.5);
-    }
+  .crow{ display:flex; padding: 0 2px; }
+  .crow.out{ justify-content: flex-end }
+  .crow.in{ justify-content: flex-start }
+  .bub{
+    max-width: 84%;
+    padding: 7px 11px 8px;
+    font-size: 13px;
+    line-height: 1.28;
+    border-radius: 18px;
+    position: relative;
+    opacity: 0; transform: translateY(8px) scale(0.96);
+    transition: opacity .35s ease, transform .45s cubic-bezier(.2,.8,.2,1), background .55s ease, color .55s ease;
+    word-wrap: break-word;
+  }
+  .bub.show{ opacity: 1; transform: translateY(0) scale(1); }
+  .bub.in{
+    background: #e9e9eb;
+    color: #000;
+    border-bottom-left-radius: 6px;
+  }
+  body.biz .bub.in{ background: #26252a; color: #fff }
+  .bub.out{
+    background: #0a84ff;
+    color: #fff;
+    border-bottom-right-radius: 6px;
+    box-shadow: 0 4px 12px -8px rgba(10,132,255,0.5);
+  }
+  .bub strong{ font-weight: 600 }
+  .stamp{
+    font-family:"Geist Mono",monospace; font-size: 10px; color: var(--mute);
+    text-align: center; margin: 6px 0 2px;
+    text-transform: uppercase; letter-spacing: 0.05em;
+    transition: color .55s ease;
+  }
+  body.biz .stamp{ color: #7a6c56 }
 
-    .phone-icon {
-      width: 18px;
-      height: 18px;
-      opacity: 0.7;
-    }
+  .typing{
+    display:inline-flex; align-items:center; gap: 3px;
+    background: #e9e9eb;
+    padding: 9px 12px; border-radius: 18px; border-bottom-left-radius: 6px;
+    opacity: 0; transform: translateY(8px);
+    transition: opacity .25s ease, transform .35s ease, background .55s ease;
+  }
+  body.biz .typing{ background: #26252a }
+  .typing.show{ opacity: 1; transform: translateY(0) }
+  .typing span{
+    width: 6px; height: 6px; border-radius: 50%; background: #8e8e93;
+    animation: blink 1.2s infinite ease-in-out;
+  }
+  body.biz .typing span{ background: #6e6d72 }
+  .typing span:nth-child(2){ animation-delay: 0.18s }
+  .typing span:nth-child(3){ animation-delay: 0.36s }
+  @keyframes blink{
+    0%, 60%, 100%{ opacity: 0.25; transform: translateY(0) }
+    30%{ opacity: 1; transform: translateY(-2px) }
+  }
 
-    .phone-number {
-      font-size: 1.25rem;
-      font-weight: 600;
-      letter-spacing: -0.02em;
-      color: var(--text);
-    }
+  .chat.flip-out{ opacity: 0; transform: translateY(8px) scale(0.985) }
 
-    .phone-hint {
-      font-size: 0.8rem;
-      color: var(--muted);
-      margin-top: 0.5rem;
-      padding-left: 0.25rem;
-    }
+  /* ── reveals ─ */
+  .reveal{ opacity: 0; transform: translateY(14px); transition: opacity .7s ease, transform .9s cubic-bezier(.2,.8,.2,1) }
+  .reveal.show{ opacity: 1; transform: translateY(0) }
 
-    /* CONVERSATION DEMO */
-    .demo {
-      display: flex;
-      flex-direction: column;
-      gap: 0.6rem;
-      margin-bottom: 4rem;
-      max-width: 420px;
-    }
+  /* word-fade  */
+  .word{ display: inline-block; opacity: 0; transform: translateY(0.35em); filter: blur(6px); transition: opacity .55s ease, transform .65s cubic-bezier(.2,.8,.2,1), filter .55s ease }
+  .word.show{ opacity: 1; transform: none; filter: blur(0) }
 
-    .bubble {
-      padding: 0.7rem 1rem;
-      border-radius: 16px;
-      font-size: 0.9rem;
-      line-height: 1.45;
-      max-width: 85%;
-    }
+  /* ── stats + footer ─────────────────────────────── */
+  .stats{
+    padding: 14px 0 14px;
+    border-top: 1px solid var(--line);
+    margin-top: 18px;
+    transition: border-color .55s ease;
+  }
+  body.biz .stats{ border-top-color: rgba(255,255,255,0.08) }
+  .stats-grid{ display: grid; grid-template-columns: 1fr; gap: 12px }
+  .stat .k{
+    font-family: "Bricolage Grotesque", sans-serif;
+    font-weight: 700; font-size: clamp(22px, 5vw, 28px);
+    letter-spacing: -0.03em; line-height: 1;
+    display: inline-flex; align-items: baseline; gap: 2px;
+  }
+  .stat .k .unit{ color: var(--orange) }
+  .stat .v{
+    font-family: "Geist Mono", monospace; font-size: 10.5px; letter-spacing: 0.08em;
+    color: #6b5a40; text-transform: uppercase; margin-top: 4px;
+    transition: color .55s ease;
+  }
+  body.biz .stat .v{ color: #a08e72 }
+  footer{
+    padding: 12px 0 14px;
+    border-top: 1px solid var(--line);
+    transition: border-color .55s ease;
+  }
+  body.biz footer{ border-top-color: rgba(255,255,255,0.08) }
+  .foot{
+    display:flex; align-items:center; justify-content: space-between; gap: 14px;
+    flex-wrap: wrap;
+    font-family: "Geist Mono", monospace; font-size: 11px;
+    letter-spacing: 0.06em; text-transform: uppercase; color: #6b5a40;
+    transition: color .55s ease;
+  }
+  body.biz .foot{ color: #a08e72 }
+  .foot .brand{ display:inline-flex; align-items:center; gap: 8px }
+  .foot .live-strip{ display:inline-flex; align-items:center; gap: 8px }
 
-    .bubble.user {
-      background: #1c1c1e;
-      color: var(--text);
-      border-bottom-right-radius: 4px;
-      align-self: flex-end;
-      border: 1px solid var(--border);
-    }
+  /* desktop */
+  @media (min-width: 860px){
+    .hero{ padding: 20px 0 20px }
+    .hero-grid{ grid-template-columns: 1.05fr 0.95fr; gap: 48px; margin-top: 12px; align-items: center }
+    .chat-stack{ margin: 0 0 0 auto; max-width: 320px }
+    .stats{ padding: 18px 0; margin-top: 48px }
+    .stats-grid{ grid-template-columns: repeat(3, 1fr); gap: 28px }
+    footer{ padding: 14px 0 18px }
+    h1.hero-h{ font-size: clamp(40px, 4.6vw, 56px); margin: 10px 0 10px }
+    .hero p.sub{ margin-bottom: 14px }
+  }
 
-    .bubble.bot {
-      background: var(--accent-dim);
-      border: 1px solid rgba(232, 98, 42, 0.2);
-      color: var(--text);
-      border-bottom-left-radius: 4px;
-      align-self: flex-start;
-    }
-
-    .demo-label {
-      font-size: 0.72rem;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 1rem;
-    }
-
-    /* HOW IT WORKS */
-    .how {
-      border-top: 1px solid var(--border);
-      padding-top: 2.5rem;
-      margin-bottom: 4rem;
-    }
-
-    .how-title {
-      font-size: 0.72rem;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 1.5rem;
-    }
-
-    .steps {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-
-    .step {
-      display: flex;
-      gap: 1rem;
-      align-items: flex-start;
-    }
-
-    .step-num {
-      font-size: 0.75rem;
-      color: var(--accent);
-      font-weight: 600;
-      width: 1.5rem;
-      flex-shrink: 0;
-      padding-top: 0.05rem;
-    }
-
-    .step-text {
-      font-size: 0.92rem;
-      color: var(--muted);
-      line-height: 1.5;
-    }
-
-    .step-text strong { color: var(--text); font-weight: 500; }
-
-    /* FOOTER */
-    footer {
-      padding: 1.5rem 2rem;
-      border-top: 1px solid var(--border);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    footer p {
-      font-size: 0.78rem;
-      color: var(--muted);
-    }
-
-    .dot {
-      display: inline-block;
-      width: 6px;
-      height: 6px;
-      background: #2d9c4a;
-      border-radius: 50%;
-      margin-right: 0.4rem;
-      animation: pulse 2s ease-in-out infinite;
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.4; }
-    }
-
-    @media (max-width: 480px) {
-      nav { padding: 1.25rem; }
-      .hero { padding: 4rem 1.25rem 3rem; }
-      footer { flex-direction: column; gap: 0.5rem; text-align: center; }
-    }
-  </style>
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration: 0.001s !important; transition-duration: 0.001s !important }
+    .word{ opacity: 1; transform: none; filter: none }
+  }
+</style>
 </head>
 <body>
 
-  <nav>
-    <a class="logo" href="/">macro<span>brain</span></a>
-    <a class="cta-small" href="sms:+16282679212">Text us</a>
-  </nav>
+<div class="bg"></div>
+<div class="bg-grid"></div>
+<div class="blob b1"></div>
+<div class="blob b2"></div>
 
-  <main class="hero">
-
-    <p class="eyebrow">San Francisco</p>
-
-    <h1>Your city knows<br />what to <em>eat.</em></h1>
-
-    <p class="sub">
-      Text macrobrain what you're craving — or what you're hitting protein-wise today — and get a real answer. Real restaurants. Real macros. Live deals.
-    </p>
-
-    <div class="sms-block">
-      <span class="sms-label">iMessage or SMS</span>
-      <a class="phone-cta" href="sms:+16282679212&body=I'm trying to hit 180g protein today. What should I eat in SF?">
-        <svg class="phone-icon" viewBox="0 0 24 24" fill="none" stroke="#e8622a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+<!-- ── TOP BAR ── -->
+<header class="topbar">
+  <div class="wrap row">
+    <a class="logo" href="#top">
+      <span class="fork-icon" aria-hidden="true">
+        <svg width="13" height="16" viewBox="0 0 13 16" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="2.5" y1="1"   x2="2.5" y2="5.5"/>
+          <line x1="6.5" y1="1"   x2="6.5" y2="5.5"/>
+          <line x1="10.5" y1="1"  x2="10.5" y2="5.5"/>
+          <path d="M2.5 5.5c0 2 1.8 3.2 4 3.2s4-1.2 4-3.2"/>
+          <line x1="6.5" y1="8.7" x2="6.5" y2="15"/>
         </svg>
-        <span class="phone-number">(628) 267-9212</span>
-      </a>
-      <p class="phone-hint">Tap to open Messages with a starter prompt</p>
+      </span>
+      forksf
+    </a>
+    <span class="live"><span class="pulse"></span> Live · SF</span>
+  </div>
+</header>
+
+<!-- ── HERO ── -->
+<section class="hero" id="top">
+  <div class="wrap hero-inner">
+
+    <!-- toggle -->
+    <div class="toggle" role="tablist" aria-label="Who are you?">
+      <span class="knob" id="knob"></span>
+      <button id="tabEater" aria-pressed="true" role="tab">
+        <span class="ico" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11h16a8 8 0 0 1-16 0z"/><path d="M2 21h20"/><path d="M7 7c1-2 3-2 4 0s3 2 4 0"/></svg>
+        </span>
+        I'm eating
+      </button>
+      <button id="tabBiz" aria-pressed="false" role="tab">
+        <span class="ico" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l2-5h14l2 5"/><path d="M4 9v11h16V9"/><path d="M9 20v-5h6v5"/></svg>
+        </span>
+        I run a place
+      </button>
     </div>
 
-    <div class="demo">
-      <p class="demo-label">How it goes</p>
-      <div class="bubble user">trying to hit 180g protein today, want indian food</div>
-      <div class="bubble bot">Bhainsaab Marina — Lamb Seekh Kebab Platter, 54g protein / 720 cal. Tandoori-grilled, no fillers. Add the dal makhani for another 18g. 2000 Chestnut.</div>
-      <div class="bubble user">anything with a happy hour right now?</div>
-      <div class="bubble bot">Absinthe Hayes Valley — happy hour til 6pm, $2 off all apps. Their steak frites runs 48g protein. 398 Hayes St.</div>
-    </div>
+    <div class="hero-grid">
+      <div>
+        <span class="eyebrow" id="eyebrow">
+          <span id="eyebrowTxt"></span>
+        </span>
+        <h1 class="hero-h display" id="heroH"></h1>
+        <p class="sub" id="heroSub"></p>
 
-    <div class="how">
-      <p class="how-title">What's under the hood</p>
-      <div class="steps">
-        <div class="step">
-          <span class="step-num">01</span>
-          <p class="step-text"><strong>100 SF restaurants</strong> indexed with dish-level macros, hours, neighborhoods, and dietary tags.</p>
+        <div class="cta-row">
+          <a class="cta" id="cta" href="sms:+16282679212&body=hey%20forksf" aria-label="Text forksf at (628) 267-9212">
+            <span class="pill">
+              <span class="small" id="ctaSmall">Text us</span>
+              <span class="num">(628) 267-9212</span>
+            </span>
+            <span class="icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-1.06 4.06A8.5 8.5 0 0 1 12.5 20 8.5 8.5 0 0 1 8.44 18.94L3 20l1.06-5.44A8.5 8.5 0 0 1 12.5 3a8.5 8.5 0 0 1 8.5 8.5z"/></svg>
+            </span>
+          </a>
+          <span class="cta-hint"><span>↳</span> <span id="ctaHint">opens messages</span></span>
         </div>
-        <div class="step">
-          <span class="step-num">02</span>
-          <p class="step-text"><strong>Live deal pipeline</strong> scrapes Instagram and restaurant sites daily. Restaurants text in their own specials.</p>
-        </div>
-        <div class="step">
-          <span class="step-num">03</span>
-          <p class="step-text"><strong>Remembers your goals.</strong> Tell it once — "trying to cut, staying under 2000 cal" — and every reply is calibrated to you.</p>
+        <p class="biz-note">text from your registered restaurant number on Google Maps / Yelp</p>
+      </div>
+
+      <!-- iPhone -->
+      <div class="chat-stack">
+        <div class="chat" id="chat" aria-hidden="true">
+          <div class="screen">
+            <div class="island" aria-hidden="true"></div>
+            <div class="status">
+              <span class="t">9:41</span>
+              <span class="ico-row" aria-hidden="true">
+                <!-- signal -->
+                <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="0.6"/><rect x="4.5" y="5" width="3" height="6" rx="0.6"/><rect x="9" y="2.5" width="3" height="8.5" rx="0.6"/><rect x="13.5" y="0" width="3" height="11" rx="0.6"/></svg>
+                <!-- wifi -->
+                <svg width="15" height="11" viewBox="0 0 15 11" fill="currentColor"><path d="M7.5 1C4.7 1 2.1 2 0.2 3.7L1.5 5.1C3.1 3.7 5.2 2.9 7.5 2.9s4.4 0.8 6 2.2L14.8 3.7C12.9 2 10.3 1 7.5 1z"/><path d="M7.5 4.7c-1.9 0-3.6 0.7-4.9 1.9l1.3 1.4c1-0.9 2.2-1.4 3.6-1.4s2.6 0.5 3.6 1.4l1.3-1.4c-1.3-1.2-3-1.9-4.9-1.9z"/><path d="M7.5 8.3c-0.9 0-1.7 0.4-2.3 0.9L7.5 11.5l2.3-2.3c-0.6-0.5-1.4-0.9-2.3-0.9z"/></svg>
+                <!-- battery -->
+                <svg width="27" height="12" viewBox="0 0 27 12" fill="none"><rect x="0.5" y="0.5" width="22" height="11" rx="3" stroke="currentColor" stroke-opacity="0.5"/><rect x="2" y="2" width="19" height="8" rx="1.5" fill="currentColor"/><rect x="23.5" y="3.5" width="2" height="5" rx="1" fill="currentColor" fill-opacity="0.5"/></svg>
+              </span>
+            </div>
+            <div class="msg-nav">
+              <a class="back" href="#" aria-hidden="true">
+                <svg width="11" height="18" viewBox="0 0 11 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9,2 2,9 9,16"/></svg>
+                <span class="badge">42</span>
+              </a>
+              <span class="right" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="9" r="3"/><circle cx="12" cy="14" r="7"/></svg>
+              </span>
+              <div class="avatar">f</div>
+              <div class="name">forksf <span class="chev">›</span></div>
+              <div class="sub" id="chatSub">(628) 267-9212 · iMessage</div>
+            </div>
+            <div class="body" id="chatBody"></div>
+            <div class="compose">
+              <div class="plus" aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              </div>
+              <div class="input">
+                <span>iMessage</span>
+                <span class="mic" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                </span>
+              </div>
+            </div>
+            <div class="home" aria-hidden="true"><span></span></div>
+          </div>
         </div>
       </div>
     </div>
 
-  </main>
+  </div>
+</section>
 
-  <footer>
-    <p><span class="dot"></span>Live on iMessage · SF only for now</p>
-    <p>macrobrain © 2026</p>
-  </footer>
+<!-- stats below the fold -->
+<div class="stats">
+  <div class="wrap stats-grid">
+    <div class="stat">
+      <div class="k"><span data-count="100">0</span><span class="unit">+</span></div>
+      <div class="v">SF restaurants indexed</div>
+    </div>
+    <div class="stat">
+      <div class="k">Daily deal pipeline</div>
+      <div class="v">specials · happy hours · events</div>
+    </div>
+    <div class="stat">
+      <div class="k">SMS — no app</div>
+      <div class="v">text the number, get an answer</div>
+    </div>
+  </div>
+</div>
 
+<footer>
+  <div class="wrap foot">
+    <span class="live-strip"><span class="pulse"></span> live on iMessage · SF only for now</span>
+    <span class="brand"><span style="width:8px;height:8px;border-radius:3px;background:var(--orange);display:inline-block"></span> forksf © 2026</span>
+  </div>
+</footer>
+
+<script>
+  /* ── content per mode ─────────────────────────────── */
+  const MODES = {
+    eater: {
+      eyebrow: 'f(<span class="op">craving</span> · <span class="op">macros</span> · <span class="op">deals</span>) <span class="arr">→</span> dish',
+      headline: ['Your','city','knows','what','to','eat.'],
+      accentFrom: 3,
+      sub: "text what you're craving or your macro target — get one SF spot, one dish, any live deal.",
+      ctaSmall: 'Text us',
+      ctaHint: 'opens messages',
+      ctaHref: 'sms:+16282679212&body=hey%20forksf',
+      chatSub: '(628) 267-9212 · iMessage',
+      script: [
+        { kind: 'stamp', text: 'Sat May 16 · 12:47 PM' },
+        { kind: 'out', delay: 400, text: "trying to hit 180g protein today, want something indian" },
+        { kind: 'typing', delay: 800, dur: 1200 },
+        { kind: 'in', text: "Bhainsaab Marina — Lamb Seekh Kebab Platter. 54g protein, 720 cal." },
+        { kind: 'in', delay: 500, text: "2000 Chestnut St. Add dal makhani for +18g." },
+        { kind: 'out', delay: 1400, text: "anything with a happy hour right now?" },
+        { kind: 'typing', delay: 800, dur: 1200 },
+        { kind: 'in', text: "Absinthe, Hayes Valley — happy hour til 6pm, $2 off all apps." },
+        { kind: 'in', delay: 500, text: "Steak frites = 48g protein. 398 Hayes St." },
+      ],
+    },
+    biz: {
+      eyebrow: 'broadcast(<span class="op">deal</span> · <span class="op">hours</span> · <span class="op">menu</span>) <span class="arr">→</span> matching eaters',
+      headline: ['You','run','the','place.','Just','text','the','deal.'],
+      accentFrom: 4,
+      sub: "text your special, happy hour, or event — it indexes in seconds and surfaces to eaters searching SF right now.",
+      ctaSmall: 'Post a deal',
+      ctaHint: 'same number, your menu',
+      ctaHref: 'sms:+16282679212&body=happy%20hour%204-6pm%20today',
+      chatSub: 'trick dog · owner line',
+      script: [
+        { kind: 'stamp', text: 'Sat May 16 · 3:48 PM' },
+        { kind: 'out', delay: 400, text: "Happy hour 4–6pm today, half off all cocktails and $12 burger special" },
+        { kind: 'typing', delay: 800, dur: 1100 },
+        { kind: 'in', text: "Got it — live now." },
+        { kind: 'in', delay: 500, text: "People searching SF happy hours will see Trick Dog first." },
+        { kind: 'out', delay: 1500, text: "also add: oyster night thursday 7pm" },
+        { kind: 'typing', delay: 800, dur: 1000 },
+        { kind: 'in', text: "Queued for Thu May 22, 7pm — oysters, date night, seafood." },
+      ],
+    }
+  };
+
+  let current = 'eater';
+  let chatTimers = [];
+  function clearTimers(){ chatTimers.forEach(t => clearTimeout(t)); chatTimers = [] }
+
+  /* ── render mode content ──────────────────────────── */
+  function setMode(mode){
+    if (mode === current) return;
+    current = mode;
+    document.body.classList.toggle('biz', mode === 'biz');
+    const m = MODES[mode];
+
+    document.getElementById('tabEater').setAttribute('aria-pressed', mode === 'eater');
+    document.getElementById('tabBiz').setAttribute('aria-pressed', mode === 'biz');
+    moveKnob();
+
+    const h = document.getElementById('heroH');
+    const oldWords = [...h.querySelectorAll('.word')];
+    oldWords.forEach((w, i) => {
+      w.style.transitionDelay = (i * 0.02) + 's';
+      w.classList.remove('show');
+    });
+    setTimeout(() => buildHeadline(m), 260);
+
+    const sub = document.getElementById('heroSub');
+    sub.style.opacity = 0;
+    setTimeout(() => {
+      sub.textContent = m.sub;
+      sub.style.transition = 'opacity .5s ease';
+      sub.style.opacity = 1;
+    }, 260);
+
+    document.getElementById('eyebrowTxt').innerHTML = m.eyebrow;
+    document.getElementById('ctaSmall').textContent = m.ctaSmall;
+    document.getElementById('ctaHint').textContent = m.ctaHint;
+    document.getElementById('cta').setAttribute('href', m.ctaHref);
+    document.getElementById('chatSub').textContent = m.chatSub;
+
+    const chat = document.getElementById('chat');
+    chat.classList.add('flip-out');
+    clearTimers();
+    setTimeout(() => {
+      document.getElementById('chatBody').innerHTML = '';
+      chat.classList.remove('flip-out');
+      playChat(m.script);
+    }, 380);
+  }
+
+  function buildHeadline(m){
+    const h = document.getElementById('heroH');
+    h.innerHTML = m.headline.map((w, i) =>
+      `<span class="word${i >= m.accentFrom ? ' accent' : ''}">${w}</span>`
+    ).join(' ');
+    const words = h.querySelectorAll('.word');
+    words.forEach((w, i) => { w.style.transitionDelay = (0.05 + i * 0.06) + 's'; });
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      words.forEach(w => w.classList.add('show'));
+    }));
+  }
+
+  /* ── chat playback ───────────────────────────────── */
+  function playChat(script){
+    const body = document.getElementById('chatBody');
+    body.innerHTML = '';
+    let idx = 0;
+    function next(){
+      if (idx >= script.length){
+        chatTimers.push(setTimeout(() => {
+          body.innerHTML = ''; idx = 0; next();
+        }, 4800));
+        return;
+      }
+      const s = script[idx++];
+      const wait = s.delay || (s.kind === 'stamp' ? 100 : 200);
+      chatTimers.push(setTimeout(() => {
+        if (s.kind === 'stamp'){
+          const el = document.createElement('div'); el.className = 'stamp'; el.textContent = s.text;
+          body.appendChild(el);
+          next(); return;
+        }
+        if (s.kind === 'typing'){
+          const row = document.createElement('div'); row.className = 'crow in';
+          const t = document.createElement('div'); t.className = 'typing';
+          t.innerHTML = '<span></span><span></span><span></span>';
+          row.appendChild(t); body.appendChild(row);
+          requestAnimationFrame(() => t.classList.add('show'));
+          chatTimers.push(setTimeout(() => { row.remove(); next(); }, s.dur || 1100));
+          return;
+        }
+        const row = document.createElement('div'); row.className = 'crow ' + s.kind;
+        const bub = document.createElement('div'); bub.className = 'bub ' + s.kind;
+        if (s.html) bub.innerHTML = s.html; else bub.textContent = s.text;
+        row.appendChild(bub); body.appendChild(row);
+        requestAnimationFrame(() => requestAnimationFrame(() => bub.classList.add('show')));
+        next();
+      }, wait));
+    }
+    next();
+  }
+
+  /* ── toggle knob ─────────────────────────────────── */
+  function moveKnob(){
+    const knob = document.getElementById('knob');
+    const active = document.querySelector('.toggle button[aria-pressed="true"]');
+    if (!active || !knob) return;
+    const tog = active.parentElement;
+    const r = active.getBoundingClientRect();
+    const pr = tog.getBoundingClientRect();
+    knob.style.width = r.width + 'px';
+    knob.style.transform = `translateX(${r.left - pr.left - 5}px)`;
+  }
+  document.getElementById('tabEater').addEventListener('click', () => setMode('eater'));
+  document.getElementById('tabBiz').addEventListener('click', () => setMode('biz'));
+  window.addEventListener('resize', moveKnob);
+  window.addEventListener('load', moveKnob);
+
+  /* ── init ──────────────────────────────────────── */
+  buildHeadline(MODES.eater);
+  document.getElementById('heroSub').textContent = MODES.eater.sub;
+  document.getElementById('eyebrowTxt').innerHTML = MODES.eater.eyebrow;
+  setTimeout(moveKnob, 30);
+  playChat(MODES.eater.script);
+
+  // count-up when stats visible
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting && e.target.dataset.count){
+        const target = parseInt(e.target.dataset.count, 10);
+        const dur = 1400, start = performance.now(), el = e.target;
+        (function tick(now){
+          const t = Math.min(1, (now - start)/dur);
+          el.textContent = Math.round(target * (1 - Math.pow(1-t,3)));
+          if (t < 1) requestAnimationFrame(tick);
+        })(performance.now());
+        io.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.4 });
+  document.querySelectorAll('[data-count]').forEach(el => io.observe(el));
+</script>
 </body>
 </html>
