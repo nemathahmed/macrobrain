@@ -8,17 +8,19 @@ Text it. Get the right spot for your macros, neighborhood, and tonight's deals �
 
 ## The frustration that built this
 
-Every time I'm out with friends in SF, the same 10 minutes die deciding where to eat. It sounds trivial until you do the math:
+![Origin — written the night before the hackathon](origin.jpeg)
 
-> **10 min × 3 meals/day × 365 days = 182 hours/year** lost to "where should we go?"
+Every time I'm out with friends in SF, the same 10 minutes die to the same question. It sounds trivial until you do the math:
 
-And that's just time. Add in the cognitive overhead of cross-referencing deals, dietary goals, and who's closest — and it's genuinely broken.
+> **SF(deals, preference, location) = 10+ min** — and also my macro goals
 
-Last night I was in Marina at Pacific Catch. They had a $9 spicy tuna roll happy hour — one of the best deals I've seen in the city. The place was empty. I asked the waitress why. *"Not a lot of people know about it."*
+That's 182 hours a year. Gone. Just to decide where to eat.
 
-That was the moment. A great restaurant with a great deal, invisible to everyone walking by.
+Last night I was in Marina at Pacific Catch. $9 spicy tuna roll happy hour. Place was empty. I asked the waitress why. *"Not a lot of people know about it."*
 
-I've been building [Shifu Health](https://shifu.health) — a health and fitness AI. The macro-awareness layer, the personalization, the memory system — all of it applies directly to food decisions. Yesterday night I merged both problems. Today, ForkSF is born.
+That's the other half of the problem — not just my decision cost, but the restaurant's invisibility cost. A great deal that nobody sees is a deal that doesn't exist.
+
+I've been building [Shifu Health](https://shifu.health) — a health and fitness AI built around macro tracking and personalization. That night I merged both frustrations. Today, ForkSF is born.
 
 A few hours. One hackathon. Real SMS. Real restaurants. Real deals.
 
